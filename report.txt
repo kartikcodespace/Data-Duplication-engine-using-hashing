@@ -1,0 +1,25 @@
+==================================================
+     DATA DEDUPLICATION ENGINE - REPORT
+==================================================
+Generated On          : 2026-07-12 19:38:26
+
+--- Record Statistics ---
+Total Records          : 105
+Unique Records          : 70
+Duplicate Records       : 35
+Duplicate Percentage    : 33.33 %
+Hash Collisions Resolved: 0
+
+--- Storage Statistics ---
+Raw Data Size           : 6224 bytes
+Cleaned Data Size       : 4160 bytes
+Storage Saved           : 2064 bytes (33.16 %)
+
+--- Performance ---
+Execution Time          : 0.000 ms
+
+--- Algorithm Used ---
+Hashing Algorithm       : FNV-1a (64-bit)
+Duplicate Detection     : Hash-bucket + verification
+                          (unordered_map<hash, vector<index>>)
+==================================================

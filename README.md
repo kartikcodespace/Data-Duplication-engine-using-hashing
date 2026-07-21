@@ -1,21 +1,116 @@
-# Data-Duplication-engine-using-hashing
-A C++-based Data Deduplication Engine that loads CSV datasets, identifies duplicate records using hashing techniques, removes redundant data, and generates cleaned datasets with detailed reports. Built using OOP, STL, file handling, and efficient data structures.
+# Data Deduplication Engine (C++17)
 
+A console-based C++ application that loads large datasets from CSV files,
+detects duplicate records using hashing techniques, removes redundant
+records automatically, stores only unique records, and generates a
+detailed deduplication report — built for MCA semester project evaluation.
 
-Data Deduplication Engine using C++, Hashing, and GitHub Open Source
+## Features
 
-The Data Deduplication Engine is a comprehensive C++ application designed to identify, analyze, and eliminate duplicate records from large datasets efficiently. In many real-world systems, duplicate information accumulates over time due to repeated data entry, system migrations, synchronization issues, or human error. Such redundant data increases storage requirements, slows data processing, and affects the accuracy of analytics and decision-making. This project addresses these challenges by implementing an efficient deduplication mechanism based on hashing techniques.
+- Menu-driven console application
+- CSV parsing with quoted-field support
+- Duplicate detection using FNV-1a hashing + collision-safe verification
+- Automatic removal of duplicate records
+- Cleaned dataset export (`cleaned_data.csv`)
+- Detailed report generation (`report.txt`) with console summary
+- Execution time measurement using `<chrono>`
+- Robust exception handling for missing/invalid files
 
-The application reads structured datasets from CSV files and processes each record individually. Every record is transformed into a unique fingerprint using the FNV-1a 64-bit hashing algorithm, enabling rapid duplicate detection with minimal computational overhead. To ensure accuracy, the system also performs record verification whenever hash values match, effectively handling potential hash collisions. This combination of hashing and verification provides reliable identification of duplicate entries while maintaining high performance.
+## Project Structure
 
-Developed using Object-Oriented Programming (OOP) principles, the project is organized into modular components, each responsible for a specific task. Separate classes manage record representation, CSV parsing, hash generation, duplicate detection, file writing, and report generation. This modular architecture improves maintainability, scalability, and code readability while demonstrating sound software engineering practices.
+```
+DataDeduplicationEngine/
+├── main.cpp                  # Menu-driven entry point
+├── Record.h / Record.cpp     # Represents one CSV row; signature generation
+├── CSVReader.h / .cpp        # CSV file parsing (handles quoted fields)
+├── HashUtility.h / .cpp      # FNV-1a 64-bit hashing algorithm
+├── DeduplicationEngine.h/.cpp# Core hash-bucket + verify dedup algorithm
+├── ReportGenerator.h / .cpp  # Statistics computation & report output
+├── FileWriter.h / .cpp       # Writes cleaned CSV to disk
+├── dataset.csv                # Sample input (105 rows, 35 intentional duplicates)
+├── cleaned_data.csv           # Generated output (unique records only)
+├── report.txt                  # Generated deduplication report
+└── README.md
+```
 
-The engine utilizes powerful C++ Standard Template Library (STL) containers, including vector, unordered_set, and unordered_map, to efficiently store, search, and process large collections of records. By leveraging these optimized data structures, the application achieves near O(n) time complexity for duplicate detection, making it suitable for processing datasets containing thousands of records.
+## Class Responsibilities (OOP Design)
 
-Once duplicate records are identified, the engine automatically removes redundant entries and generates a cleaned CSV dataset containing only unique records. Additionally, it creates a detailed deduplication report summarizing key performance metrics, including the total number of records processed, unique records retained, duplicate records removed, duplicate percentage, storage optimization achieved, and total execution time. These reports help users evaluate the effectiveness and efficiency of the deduplication process.
+| Class | Responsibility |
+|---|---|
+| `Record` | Encapsulates one row's fields; produces a canonical signature for hashing/equality |
+| `CSVReader` | Reads and parses CSV files into `Record` objects; throws on I/O errors |
+| `HashUtility` | Stateless FNV-1a hash computation |
+| `DeduplicationEngine` | Core dedup logic using `unordered_map<hash, vector<index>>` |
+| `FileWriter` | Writes the cleaned dataset to disk |
+| `ReportGenerator` | Computes stats and writes/prints the report |
 
-The application also incorporates robust error handling to manage situations such as missing datasets, invalid file formats, or inaccessible files. Exceptions are handled gracefully, ensuring that users receive clear and informative error messages rather than unexpected program termination. Performance measurement using the C++ <chrono> library further allows users to evaluate processing speed and algorithm efficiency.
+## Algorithm: Hash-Bucket Deduplication with Collision Verification
 
-This project demonstrates the practical application of several fundamental computer science concepts, including hashing algorithms, data structures, file handling, algorithm analysis, software design principles, and object-oriented programming. Beyond its academic value, the project reflects real-world data engineering practices used in cloud storage systems, backup solutions, database management systems, enterprise data warehouses, and large-scale information management platforms.
+1. Compute a canonical signature for each record (trimmed fields joined by `|`).
+2. Hash the signature using FNV-1a (64-bit).
+3. Look up the hash in an `unordered_map<uint64_t, vector<int>>`.
+   - Empty bucket → record is unique; insert.
+   - Non-empty bucket → compare against candidates in the bucket using
+     exact string equality (handles hash collisions correctly).
+     - Match found → duplicate, discard.
+     - No match → genuine collision; treat as unique, add to bucket.
 
-Overall, the Data Deduplication Engine provides a reliable, scalable, and efficient solution for improving data quality by removing redundant information. It showcases how modern C++ programming techniques and efficient hashing algorithms can be combined to solve real-world data management challenges while optimizing storage utilization and enhancing processing performance. The project serves as an excellent demonstration of software engineering, algorithmic thinking, and practical problem-solving skills, making it suitable for academic evaluation, technical interviews, and professional portfolios.
+**Time Complexity:** O(N·L) average case (N = records, L = avg record length)
+**Space Complexity:** O(N·L)
+
+Naive O(N²·L) pairwise comparison is avoided entirely.
+
+## Build Instructions
+
+Requires a C++17-compliant compiler (g++ 9+ / clang++ 10+).
+
+```bash
+g++ -std=c++17 -Wall -Wextra -O2 main.cpp Record.cpp CSVReader.cpp HashUtility.cpp DeduplicationEngine.cpp FileWriter.cpp ReportGenerator.cpp -o dedup_engine
+```
+
+## Run Instructions
+
+```bash
+./dedup_engine
+```
+
+Menu options:
+1. Load Dataset (`dataset.csv`)
+2. Display Loaded Records (first 10)
+3. Detect & Remove Duplicates
+4. Save Cleaned Dataset (`cleaned_data.csv`)
+5. Generate Report (`report.txt`)
+6. Run Full Pipeline (steps 1, 3, 4, 5 together)
+7. Exit
+
+## Sample Dataset
+
+`dataset.csv` contains 105 rows: 70 unique base records, 25 exact
+duplicates, and 10 "whitespace-variant" duplicates (identical data with
+extra spaces) to demonstrate the trim-normalization logic in `Record::getSignature()`.
+
+## Sample Output (from included dataset.csv)
+
+```
+Total Records Loaded        : 105
+Unique Records              : 70
+Duplicate Records           : 35
+Duplicate Percentage        : 33.33 %
+Hash Collisions Resolved    : 0
+Storage Saved               : 2064 bytes (33.16 %)
+Execution Time              : ~0.3 ms
+```
+
+## Concepts Demonstrated
+
+- Object-Oriented Programming (encapsulation, single responsibility)
+- STL containers: `vector`, `unordered_map`, `string`
+- File handling (`fstream`)
+- Custom hashing implementation (FNV-1a)
+- Exception handling (`try`/`catch`, `std::runtime_error`)
+- Performance measurement (`<chrono>`)
+- Modular multi-file C++ program structure
+
+## Author
+
+MCA Semester Project — Data Deduplication Engine
